@@ -3,6 +3,7 @@ import { supabase, signInWithEntra, signOut, api, loadProfile } from "./lib/supa
 import { MODULES, SESSIONS, PATH, buildStatus, fmtDate } from "./data/curriculum.js";
 import Quiz from "./components/Quiz.jsx";
 import Trainer from "./components/Trainer.jsx";
+import SlideViewer from "./components/SlideViewer.jsx";
 
 const MODULE_BASE_URL = import.meta.env.VITE_MODULE_BASE_URL || "";
 const emptyProgress = () => ({ modules: {}, sessions: {} });
@@ -299,7 +300,7 @@ function StatusTag({ st, kind }) {
 
 /* ---------- Modulansicht ---------- */
 function ModuleView({ module: m, state, busy, onRead, onQuiz, onBack }) {
-  const url = MODULE_BASE_URL ? MODULE_BASE_URL.replace(/\/?$/, "/") + m.file : "";
+  const url = MODULE_BASE_URL || "";
   return (
     <main className="tm-main">
       <button className="tm-back" onClick={onBack}>← Lernpfad</button>
@@ -326,25 +327,34 @@ function ModuleView({ module: m, state, busy, onRead, onQuiz, onBack }) {
 
         <div className="tm-step">
           <p className="tm-step-label">Schritt 1 — Unterlagen</p>
-          {url ? (
-            <a className="tm-btn tm-btn-ghost" href={url} target="_blank" rel="noreferrer">
-              {m.file} öffnen
-            </a>
-          ) : (
-            <div className="tm-empty">
-              Für die Modulunterlagen ist noch kein Ablageort hinterlegt (VITE_MODULE_BASE_URL).
+          <SlideViewer
+            module={m}
+            alreadyRead={!!state.read}
+            onAllSeen={() => onRead(m.id, true)}
+          />
+          {state.read ? (
+            <div className="tm-done-box">
+              Durchgearbeitet{state.readAt ? " am " + fmtDate(state.readAt) : ""}. Die Lernabfrage ist freigegeben.
             </div>
+          ) : (
+            <label className="tm-check">
+              <input
+                type="checkbox"
+                checked={false}
+                disabled={busy}
+                onChange={(e) => onRead(m.id, e.target.checked)}
+              />
+              <span>
+                Die Bestätigung setzt sich automatisch, sobald Sie alle Folien gesehen haben.
+                Hier können Sie sie auch von Hand setzen.
+              </span>
+            </label>
           )}
-          <label className="tm-check">
-            <input
-              type="checkbox"
-              checked={!!state.read}
-              disabled={busy}
-              onChange={(e) => onRead(m.id, e.target.checked)}
-            />
-            <span>Ich habe die Unterlagen vollständig durchgearbeitet.</span>
-          </label>
-          {state.readAt && <p className="tm-note">Bestätigt am {fmtDate(state.readAt)}</p>}
+          {url && (
+            <p className="tm-note">
+              <a href={url} target="_blank" rel="noreferrer">Originaldatei in SharePoint öffnen</a>
+            </p>
+          )}
         </div>
 
         <div className="tm-step">

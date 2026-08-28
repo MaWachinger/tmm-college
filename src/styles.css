@@ -197,3 +197,34 @@
   .tm-root{background:#fff;}
   .tm-cert{border:none;}
 }
+
+/* --- Folienbetrachter --- */
+.tm-viewer{margin-bottom:6px;}
+.tm-slide-loading{padding:40px;text-align:center;color:var(--muted);border:1px solid var(--line);border-radius:3px;background:#FAFCFE;}
+.tm-slide-stage{position:relative;display:flex;align-items:center;justify-content:center;background:#0E1B2E;border-radius:3px;overflow:hidden;}
+.tm-slide-img{width:100%;height:auto;display:block;cursor:pointer;}
+.tm-slide-nav{position:absolute;top:50%;transform:translateY(-50%);width:42px;height:64px;border:none;
+  background:rgba(30,52,90,.62);color:#fff;font-size:30px;line-height:1;cursor:pointer;transition:background .15s ease;}
+.tm-slide-nav:hover:not(:disabled){background:var(--cyan);color:#04263B;}
+.tm-slide-nav:disabled{opacity:.25;cursor:not-allowed;}
+.tm-slide-prev{left:0;border-radius:0 3px 3px 0;}
+.tm-slide-next{right:0;border-radius:3px 0 0 3px;}
+.tm-slide-bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:12px 2px;border-bottom:1px solid var(--line);}
+.tm-slide-count{font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--navy);font-weight:700;}
+.tm-slide-progress{flex:1;min-width:120px;height:6px;background:var(--line);border-radius:3px;overflow:hidden;}
+.tm-slide-progress span{display:block;height:100%;transition:width .2s ease;}
+.tm-slide-seen{font-size:13px;color:var(--muted);}
+.tm-slide-fs{background:none;border:1px solid var(--line);border-radius:3px;padding:5px 12px;font-size:13px;
+  cursor:pointer;color:var(--navy);}
+.tm-slide-fs:hover{border-color:var(--navy);}
+.tm-thumbs{display:flex;gap:6px;overflow-x:auto;padding:12px 0;}
+.tm-thumb{position:relative;flex:none;width:84px;border:2px solid var(--line);border-radius:2px;padding:0;
+  background:#fff;cursor:pointer;line-height:0;opacity:.55;transition:opacity .15s ease,border-color .15s ease;}
+.tm-thumb img{width:100%;height:auto;display:block;}
+.tm-thumb span{position:absolute;bottom:2px;right:3px;font-size:10px;line-height:1.4;padding:0 4px;
+  background:rgba(30,52,90,.82);color:#fff;border-radius:2px;}
+.tm-thumb.is-seen{opacity:1;}
+.tm-thumb.is-current{border-color:var(--cyan);opacity:1;}
+.tm-viewer.is-fullscreen{position:fixed;inset:0;z-index:50;background:var(--bg);padding:20px;overflow:auto;}
+.tm-viewer.is-fullscreen .tm-slide-stage{max-height:78vh;}
+.tm-viewer.is-fullscreen .tm-slide-img{max-height:78vh;width:auto;margin:0 auto;}

@@ -357,3 +357,17 @@ revoke all on public.quiz_options   from anon, authenticated;
 -- ---------- Trainer ernennen ----------
 -- Nach der ersten Anmeldung einmalig ausfuehren:
 -- update public.profiles set is_trainer = true where email = 'vorname.nachname@tmm-ag.de';
+
+-- ============================================================
+-- Folienbetrachter: Speicher fuer die gerenderten Folien
+-- ============================================================
+insert into storage.buckets (id, name, public)
+values ('module-slides', 'module-slides', false)
+on conflict (id) do nothing;
+
+-- Nur angemeldete Nutzer duerfen die Folien sehen.
+-- Die Dateien selbst werden ueber kurzlebige signierte Links ausgeliefert.
+drop policy if exists "slides readable by authenticated" on storage.objects;
+create policy "slides readable by authenticated" on storage.objects
+  for select to authenticated
+  using (bucket_id = 'module-slides');
