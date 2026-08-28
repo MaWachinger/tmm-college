@@ -1,0 +1,9 @@
+node_modules
+dist
+.env
+.env.local
+
+# Fragenkatalog bewusst NICHT im oeffentlichen Repo:
+# enthaelt die richtigen Antworten.
+# Liegt bei TMM intern und wird direkt im Supabase SQL Editor eingespielt.
+supabase/seed_questions.sql
