@@ -5,7 +5,6 @@ import Quiz from "./components/Quiz.jsx";
 import Trainer from "./components/Trainer.jsx";
 import SlideViewer from "./components/SlideViewer.jsx";
 
-const MODULE_BASE_URL = import.meta.env.VITE_MODULE_BASE_URL || "";
 const emptyProgress = () => ({ modules: {}, sessions: {} });
 
 export default function App() {
@@ -300,7 +299,6 @@ function StatusTag({ st, kind }) {
 
 /* ---------- Modulansicht ---------- */
 function ModuleView({ module: m, state, busy, onRead, onQuiz, onBack }) {
-  const url = MODULE_BASE_URL || "";
   return (
     <main className="tm-main">
       <button className="tm-back" onClick={onBack}>← Lernpfad</button>
@@ -349,11 +347,6 @@ function ModuleView({ module: m, state, busy, onRead, onQuiz, onBack }) {
                 Hier können Sie sie auch von Hand setzen.
               </span>
             </label>
-          )}
-          {url && (
-            <p className="tm-note">
-              <a href={url} target="_blank" rel="noreferrer">Originaldatei in SharePoint öffnen</a>
-            </p>
           )}
         </div>
 

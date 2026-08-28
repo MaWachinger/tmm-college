@@ -51,10 +51,17 @@ Nach der ersten eigenen Anmeldung einmalig im SQL Editor:
 update public.profiles set is_trainer = true where email = 'vorname.nachname@tmm-ag.de';
 ```
 
-## 4. Modulunterlagen verlinken
+## 4. Modulunterlagen bereitstellen
 
-Die neun PPTX bleiben auf SharePoint. Hinterlegt wird nur die Basisadresse des Ordners,
-die Dateinamen hängt die App selbst an (`Modul01_BIM-Methode_v3.pptx` usw.).
+Die Lernenden sehen die Folien im eingebauten Betrachter, nicht die PPTX. Dafür werden die
+Präsentationen zu Bildern gerendert und in den Supabase-Speicher gelegt:
+
+- Bucket `module-slides` (wird von `schema.sql` angelegt, nicht öffentlich)
+- Struktur `M01/01.jpg`, `M01/02.jpg`, … bis `M09`
+- Auslieferung über kurzlebige signierte Links, nur für angemeldete Nutzer
+
+Die Original-PPTX bleiben in SharePoint als Redaktionsablage. Die Lernenden brauchen dort
+keinen Zugriff und bekommen aus der Plattform heraus auch keinen Link dorthin.
 
 ## 5. GitHub Pages
 
@@ -66,7 +73,6 @@ die Dateinamen hängt die App selbst an (`Modul01_BIM-Methode_v3.pptx` usw.).
    |---|---|
    | `VITE_SUPABASE_URL` | `https://<projekt-ref>.supabase.co` |
    | `VITE_SUPABASE_ANON_KEY` | anon-Key aus Supabase |
-   | `VITE_MODULE_BASE_URL` | SharePoint-Ordner mit den PPTX |
 
 4. Push auf `main` — der Workflow baut und veröffentlicht automatisch.
 

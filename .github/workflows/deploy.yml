@@ -28,7 +28,6 @@ jobs:
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-          VITE_MODULE_BASE_URL: ${{ secrets.VITE_MODULE_BASE_URL }}
           VITE_BASE: /${{ github.event.repository.name }}/
       # SPA-Fallback: GitHub Pages kennt keine Rewrites
       - run: cp dist/index.html dist/404.html

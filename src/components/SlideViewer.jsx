@@ -10,6 +10,7 @@ export default function SlideViewer({ module: m, onAllSeen, alreadyRead }) {
   const [index, setIndex] = useState(0);
   const [maxSeen, setMaxSeen] = useState(0);
   const [fullscreen, setFullscreen] = useState(false);
+  const [nativeFs, setNativeFs] = useState(false);
   const reported = useRef(false);
   const stageRef = useRef(null);
 
@@ -67,6 +68,33 @@ export default function SlideViewer({ module: m, onAllSeen, alreadyRead }) {
     }
   }, [maxSeen, total, onAllSeen, alreadyRead]);
 
+  const toggleFullscreen = useCallback(async () => {
+    const el = stageRef.current;
+    if (document.fullscreenElement) {
+      try { await document.exitFullscreen(); } catch (e) { /* egal */ }
+      return;
+    }
+    if (el && el.requestFullscreen) {
+      try {
+        await el.requestFullscreen();
+        return;
+      } catch (e) {
+        // Browser verweigert Vollbild -> Overlay als Rueckfall
+      }
+    }
+    setFullscreen((v) => !v);
+  }, []);
+
+  useEffect(() => {
+    const onFsChange = () => {
+      const active = !!document.fullscreenElement;
+      setNativeFs(active);
+      setFullscreen(active);
+    };
+    document.addEventListener("fullscreenchange", onFsChange);
+    return () => document.removeEventListener("fullscreenchange", onFsChange);
+  }, []);
+
   useEffect(() => {
     const onKey = (e) => {
       if (e.key === "ArrowRight" || e.key === "PageDown" || e.key === " ") {
@@ -79,7 +107,7 @@ export default function SlideViewer({ module: m, onAllSeen, alreadyRead }) {
         go(0);
       } else if (e.key === "End") {
         go(total - 1);
-      } else if (e.key === "Escape" && fullscreen) {
+      } else if (e.key === "Escape" && fullscreen && !document.fullscreenElement) {
         setFullscreen(false);
       }
     };
@@ -97,7 +125,7 @@ export default function SlideViewer({ module: m, onAllSeen, alreadyRead }) {
   const pct = Math.round((maxSeen / total) * 100);
 
   return (
-    <div className={"tm-viewer" + (fullscreen ? " is-fullscreen" : "")} ref={stageRef}>
+    <div className={"tm-viewer" + (fullscreen ? " is-fullscreen" : "") + (nativeFs ? " is-native" : "")} ref={stageRef}>
       <div className="tm-slide-stage">
         <button
           className="tm-slide-nav tm-slide-prev"
@@ -129,8 +157,8 @@ export default function SlideViewer({ module: m, onAllSeen, alreadyRead }) {
           <span style={{ width: pct + "%", background: m.color }} />
         </div>
         <span className="tm-slide-seen">{pct} % gesehen</span>
-        <button className="tm-slide-fs" onClick={() => setFullscreen(!fullscreen)}>
-          {fullscreen ? "Verkleinern" : "Vergrößern"}
+        <button className="tm-slide-fs" onClick={toggleFullscreen}>
+          {fullscreen ? "Vollbild beenden" : "Vollbild"}
         </button>
       </div>
 
