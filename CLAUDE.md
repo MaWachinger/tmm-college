@@ -37,7 +37,9 @@ Etappe, die nur im Code steht, bleibt gesperrt — beides muss zusammen geänder
 **Folien liegen als Bilder im Supabase-Bucket `module-slides`** (nicht öffentlich, Pfade
 `M01/01.jpg` …). Ausgeliefert über signierte Links mit vier Stunden Gültigkeit. Die
 Original-PPTX liegen in SharePoint als Redaktionsablage; aus der Plattform heraus gibt es
-bewusst keinen Link dorthin, damit Lernende nicht an die Quelldateien kommen.
+bewusst keinen Link dorthin, damit Lernende nicht an die Quelldateien kommen. Das gilt auch
+für die Folien selbst: in Modul 01 stand der SharePoint-Pfad einmal als Text auf der
+Titelfolie und wäre so mitgerendert worden. Vor dem Rendern also kurz prüfen.
 
 **Die Lesebestätigung setzt sich automatisch**, sobald jemand die letzte Folie erreicht hat.
 Die Handbestätigung bleibt als Notausgang, falls Bilder fehlen.
@@ -64,23 +66,30 @@ Wenn sich eine PPTX ändert. Zwei naheliegende Wege sind ausdrücklich **nicht**
   bei SmartArt, positionierten Beschriftungen und der TMM-Schrift nicht. Die Verschiebungen
   fallen erst im Betrieb auf, dann aber in allen Modulen gleichzeitig.
 
-Der Weg, der die Folien so lässt, wie PowerPoint sie zeigt — PowerPoint macht das PDF,
-gerendert wird aus dem PDF:
-
-1. PPTX öffnen, *Datei → Exportieren → PDF/XPS erstellen*, Qualität **Standard**
-   (nicht „Minimale Größe"). Modulnummer im Dateinamen behalten. Alle PDFs in einen Ordner.
-2. Rendern:
+Gerendert wird von PowerPoint selbst, ferngesteuert. Alle PPTX in einen Ordner, dann:
 
 ```bash
-pip install pymupdf                                    # einmalig
-python tools/folien_rendern.py C:\Folien --breite 1900
+pip install pywin32 pillow                                   # einmalig
+python tools/pptx_rendern.py "<ordner>" --breite 1900 --qualitaet 80
 ```
 
-   Ergebnis liegt in `C:\Folien\render\M01\01.jpg` … — genau die Struktur des Buckets.
+Ergebnis liegt in `<ordner>/render/M01/01.jpg` … — genau die Struktur des Buckets. Das
+Skript erkennt die Modulnummer am Dateinamen, rechnet die Höhe aus dem Seitenverhältnis
+der Folie (720 × 405 pt, also 16:9) und legt die Zwischenbilder im Temp-Ordner ab, nicht
+in SharePoint. Der Umweg über PNG ist nötig, weil PowerPoint beim JPG-Export keine
+Qualitätsstufe hergibt.
 
-3. Im Bucket `module-slides` **erst den alten Ordnerinhalt löschen**, dann hochladen. Der
-   Betrachter listet alles, was in `MXX/` liegt, sortiert nach Namen — liegengebliebene
-   Dateien erscheinen als zusätzliche Folien mitten im Modul.
+**Wenn das Skript hängt:** dann blockiert ein modaler Dialog die Fernsteuerung, bisher
+gesehen als „Microsoft Visual Basic"-Fenster. Das Fenster schließen, sonst bleibt die
+PPTX gesperrt
+und lässt sich nicht einmal mehr lesen. Als Ausweichweg liegt `tools/folien_rendern.py`
+daneben: rendert aus PDFs, die man in PowerPoint von Hand über *Datei → Exportieren →
+PDF/XPS* erzeugt (Qualität **Standard**, nicht „Minimale Größe"), braucht nur
+`pip install pymupdf` und kommt ohne PowerPoint-Automatisierung aus.
+
+Beim Hochladen im Bucket `module-slides` **erst den alten Ordnerinhalt löschen**. Der
+Betrachter listet alles, was in `MXX/` liegt, sortiert nach Namen — liegengebliebene
+Dateien erscheinen als zusätzliche Folien mitten im Modul.
 
 Ändert sich dabei die Folienzahl, muss `slides:` beim Modul in `src/data/curriculum.js`
 nachgezogen werden. Die Zahl ist reine Anzeige, gezählt wird im Betrachter selbst.
