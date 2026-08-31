@@ -28,15 +28,51 @@ def modul_kennung(dateiname):
     return "M%02d" % int(m.group(1)) if m else None
 
 
+HINWEIS_SPERRE = (
+    "Die Datei ist gesperrt: %s\n\n"
+    "Meist haengt PowerPoint an einem modalen 'Microsoft Visual Basic'-Dialog\n"
+    "(Add-In greift auf ActivePresentation zu, die es beim fensterlosen Oeffnen\n"
+    "nicht gibt). Im Dialog 'Beenden' klicken -- das stoppt nur das Makro, PowerPoint\n"
+    "laeuft fensterlos weiter und haelt die Datei. Danach PowerPoint zusaetzlich\n"
+    "beenden, erst dann ist sie frei."
+)
+
+
+def gesperrte_datei(pfade):
+    """Erste Datei, die sich nicht einmal lesen laesst. Sonst None."""
+    for p in pfade:
+        try:
+            with open(p, "rb"):
+                pass
+        except PermissionError:
+            return p
+    return None
+
+
+def leeren(ordner):
+    """Zielordner leeren. rmtree scheitert, wenn OneDrive gerade synchronisiert --
+    dann die Dateien einzeln loeschen und den Ordner stehen lassen."""
+    if not os.path.isdir(ordner):
+        os.makedirs(ordner)
+        return
+    try:
+        shutil.rmtree(ordner)
+        os.makedirs(ordner)
+    except PermissionError:
+        for name in os.listdir(ordner):
+            try:
+                os.remove(os.path.join(ordner, name))
+            except OSError:
+                pass
+
+
 def rendern(app, pptx, ziel_ordner, breite, qualitaet, tmp_wurzel):
     pres = app.Presentations.Open(pptx, ReadOnly=True, WithWindow=False)
     try:
         # Seitenverhaeltnis aus der Foliengroesse (Angabe in Punkt).
         hoehe = int(round(breite * pres.PageSetup.SlideHeight / pres.PageSetup.SlideWidth))
 
-        if os.path.isdir(ziel_ordner):
-            shutil.rmtree(ziel_ordner)
-        os.makedirs(ziel_ordner)
+        leeren(ziel_ordner)
 
         tmp = tempfile.mkdtemp(dir=tmp_wurzel)
         ergebnis = []
@@ -81,6 +117,13 @@ def main():
     ziel_wurzel = os.path.join(ordner, "render")
     # Temporaere PNG bewusst NICHT in den SharePoint-Ordner legen.
     tmp_wurzel = tempfile.gettempdir()
+
+    # Vorab pruefen, ob eine Datei gesperrt ist -- sonst laeuft das Skript los und
+    # bleibt mitten in der Serie stehen. Auf einen laufenden PowerPoint-Prozess wird
+    # bewusst nicht geprueft: Restinstanzen ohne geoeffnete Datei sind harmlos.
+    gesperrt = gesperrte_datei(os.path.join(ordner, f) for f in pptx_dateien)
+    if gesperrt:
+        sys.exit(HINWEIS_SPERRE % os.path.basename(gesperrt))
 
     app = win32com.client.Dispatch(PPT_APP)
     gesamt_folien = 0

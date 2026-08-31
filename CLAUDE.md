@@ -79,10 +79,23 @@ der Folie (720 × 405 pt, also 16:9) und legt die Zwischenbilder im Temp-Ordner 
 in SharePoint. Der Umweg über PNG ist nötig, weil PowerPoint beim JPG-Export keine
 Qualitätsstufe hergibt.
 
-**Wenn das Skript hängt:** dann blockiert ein modaler Dialog die Fernsteuerung, bisher
-gesehen als „Microsoft Visual Basic"-Fenster. Das Fenster schließen, sonst bleibt die
-PPTX gesperrt
-und lässt sich nicht einmal mehr lesen. Als Ausweichweg liegt `tools/folien_rendern.py`
+**Wenn das Skript hängt**, blockiert ein modaler Dialog die Fernsteuerung. Beobachtet:
+ein PowerPoint-Add-In greift beim Öffnen auf `ActivePresentation` zu, und weil das Skript
+die Dateien bewusst ohne Fenster öffnet, gibt es keine — Laufzeitfehler `80048240`,
+„There is no active presentation". Tritt nicht zuverlässig auf; neun Module liefen durch,
+der Fehler kam erst beim nächsten Aufruf.
+
+Aufräumen in dieser Reihenfolge, sonst bleibt die PPTX gesperrt und lässt sich nicht
+einmal mehr lesen:
+
+1. Im Dialog **„Beenden"** klicken. Das stoppt nur das Makro — PowerPoint läuft weiter,
+   fensterlos, und hält die Datei immer noch.
+2. Die Instanz über die Schnittstelle schließen: `Presentations` durchgehen, `Close()`,
+   dann `Quit()`. Erst danach ist die Datei frei. Das Skript prüft beim Start, ob schon
+   ein PowerPoint läuft, und bricht mit einem Hinweis ab, statt sich an eine kaputte
+   Instanz zu hängen.
+
+Als Ausweichweg liegt `tools/folien_rendern.py`
 daneben: rendert aus PDFs, die man in PowerPoint von Hand über *Datei → Exportieren →
 PDF/XPS* erzeugt (Qualität **Standard**, nicht „Minimale Größe"), braucht nur
 `pip install pymupdf` und kommt ohne PowerPoint-Automatisierung aus.
