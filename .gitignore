@@ -7,3 +7,6 @@ dist
 # enthaelt die richtigen Antworten.
 # Liegt bei TMM intern und wird direkt im Supabase SQL Editor eingespielt.
 supabase/seed_questions.sql
+
+# Python-Zwischenstand der Werkzeuge in tools/
+__pycache__/

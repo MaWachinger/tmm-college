@@ -116,7 +116,9 @@ nachgezogen werden. Die Zahl ist reine Anzeige, gezählt wird im Betrachter selb
 
 ## Offene Punkte
 
-1. **HD-Folien hochladen** — 1900px-Fassung ersetzt die erste 1100px-Fassung im Bucket
+1. **Zertifikat im Betrieb ansehen** — Blatt 1 und 2 sind bisher nur als statische Vorschau
+   geprüft, nie in der laufenden App mit echten Daten. Dafür braucht es ein vollständig
+   abgeschlossenes Programm; als Trainer lässt sich das an einem Testkonto herstellen.
 2. **Zertifikat** — Nummer, zwei Unterschriftsfelder und Blatt 2 mit den Lernschwerpunkten
    stehen. Offen: wer gegenzeichnet, Geschäftsführung oder HR — das ist die eine Zeile
    `CERT_COUNTERSIGN` in `src/App.jsx`. Und die Nummer wird im Browser aus Programm und
