@@ -230,8 +230,7 @@
   display:flex;flex-direction:column;overflow:hidden;}
 .tm-viewer.is-native{padding:0;background:#0E1B2E;}
 .tm-viewer.is-fullscreen .tm-slide-stage{flex:1;min-height:0;background:#0E1B2E;}
-.tm-viewer.is-fullscreen .tm-slide-img{width:auto;height:auto;max-width:100%;max-height:100%;
-  object-fit:contain;margin:0 auto;}
+.tm-viewer.is-fullscreen .tm-slide-img{width:100%;height:100%;object-fit:contain;margin:0;}
 .tm-viewer.is-fullscreen .tm-slide-bar{flex:none;padding:10px 16px;border-bottom:none;}
 .tm-viewer.is-native .tm-slide-bar{background:#132741;border-radius:0;}
 .tm-viewer.is-native .tm-slide-count{color:#fff;}
@@ -242,3 +241,29 @@
 .tm-viewer.is-fullscreen .tm-thumb{width:62px;}
 .tm-viewer.is-fullscreen .tm-note{display:none;}
 .tm-viewer.is-fullscreen .tm-slide-nav{width:56px;height:88px;font-size:38px;}
+
+/* --- Startseite mit Programmen --- */
+.tm-brand-btn{background:none;border:none;cursor:pointer;padding:0;text-align:left;}
+.tm-brand-btn:hover .tm-brand-word{color:var(--yellow);}
+.tm-hero{padding:8px 0 22px;}
+.tm-programs{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-bottom:26px;}
+.tm-program{display:flex;flex-direction:column;gap:12px;text-align:left;background:var(--card);
+  border:1px solid var(--line);border-top:4px solid var(--cyan);border-radius:4px;padding:20px;cursor:pointer;
+  transition:transform .15s ease,box-shadow .15s ease;}
+.tm-program:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 4px 14px rgba(30,52,90,.1);}
+.tm-program:disabled{cursor:default;opacity:.62;}
+.tm-program-head{display:flex;flex-direction:column;gap:4px;}
+.tm-program-title{font-size:20px;color:var(--ink);line-height:1.2;}
+.tm-program-sub{font-size:13px;color:var(--muted);}
+.tm-program-bar{display:block;height:6px;background:var(--line);border-radius:3px;overflow:hidden;}
+.tm-program-bar span{display:block;height:100%;}
+.tm-program-state{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
+.tm-program.is-complete .tm-program-state{color:#2F6B31;font-weight:700;}
+.tm-program.is-empty{border-style:dashed;}
+
+/* --- Trainer: Filter und Programmpillen --- */
+.tm-filter{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0 18px;}
+.tm-chip.is-on{background:var(--navy);color:#fff;border-color:var(--navy);}
+.tm-pill{display:inline-block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#fff;
+  padding:3px 9px;border-radius:2px;margin:0 5px 4px 0;}
+.tm-prog-line{display:flex;align-items:center;gap:8px;margin-bottom:5px;}

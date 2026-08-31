@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { supabase, signInWithEntra, signOut, api, loadProfile } from "./lib/supabase.js";
-import { MODULES, SESSIONS, PATH, buildStatus, fmtDate } from "./data/curriculum.js";
+import { getProgram, pathOf, buildStatus, fmtDate } from "./data/curriculum.js";
 import Quiz from "./components/Quiz.jsx";
 import Trainer from "./components/Trainer.jsx";
 import SlideViewer from "./components/SlideViewer.jsx";
@@ -11,14 +11,16 @@ export default function App() {
   const [booted, setBooted] = useState(false);
   const [profile, setProfile] = useState(null);
   const [progress, setProgress] = useState(emptyProgress());
-  const [view, setView] = useState({ name: "dashboard" });
+  const [programs, setPrograms] = useState([]);
+  const [view, setView] = useState({ name: "home" });
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
   const refresh = useCallback(async () => {
     try {
-      const p = await api.myProgress();
+      const [p, progs] = await Promise.all([api.myProgress(), api.myPrograms()]);
       setProgress({ modules: p.modules || {}, sessions: p.sessions || {} });
+      setPrograms(progs || []);
     } catch (e) {
       setError(e.message);
     }
@@ -43,6 +45,7 @@ export default function App() {
       } else {
         setProfile(null);
         setProgress(emptyProgress());
+        setPrograms([]);
       }
     });
     return () => {
@@ -50,10 +53,6 @@ export default function App() {
       sub.subscription.unsubscribe();
     };
   }, [refresh]);
-
-  const status = useMemo(() => buildStatus(progress), [progress]);
-  const doneCount = PATH.filter((i) => status[i.id] === "done").length;
-  const nextItem = PATH.find((i) => status[i.id] === "active") || null;
 
   const setRead = async (moduleId, value) => {
     setBusy(true);
@@ -67,22 +66,35 @@ export default function App() {
     setBusy(false);
   };
 
+  const activeProgram = view.program ? getProgram(view.program) : null;
+  const status = useMemo(
+    () => (activeProgram ? buildStatus(activeProgram, progress) : {}),
+    [activeProgram, progress]
+  );
+
   if (!booted) {
     return (
       <div className="tm-root">
-        <div className="tm-boot">Lernstand wird geladen …</div>
+        <div className="tm-boot">Wird geladen …</div>
       </div>
     );
   }
 
+  const openItem = (item) =>
+    setView(
+      item.kind === "module"
+        ? { name: "module", program: view.program, id: item.id }
+        : { name: "session", program: view.program, id: item.id }
+    );
+
   return (
     <div className="tm-root">
       <header className="tm-header">
-        <div className="tm-brand">
+        <button className="tm-brand tm-brand-btn" onClick={() => setView({ name: "home" })}>
           <span className="tm-brand-mark">TMM</span>
           <span className="tm-brand-word">COLLEGE</span>
-          <span className="tm-brand-sub">BIM-Zertifizierung</span>
-        </div>
+          {activeProgram && <span className="tm-brand-sub">{activeProgram.title}</span>}
+        </button>
         <div className="tm-header-right">
           {profile && (
             <>
@@ -106,76 +118,165 @@ export default function App() {
       {!profile ? (
         <Login />
       ) : view.name === "trainer" ? (
-        <Trainer onClose={() => setView({ name: "dashboard" })} />
+        <Trainer onClose={() => setView({ name: "home" })} />
       ) : view.name === "module" ? (
         <ModuleView
-          module={MODULES.find((m) => m.id === view.id)}
+          module={activeProgram.modules.find((m) => m.id === view.id)}
           state={progress.modules[view.id] || {}}
           busy={busy}
           onRead={setRead}
-          onQuiz={() => setView({ name: "quiz", id: view.id })}
-          onBack={() => setView({ name: "dashboard" })}
+          onQuiz={() => setView({ ...view, name: "quiz" })}
+          onBack={() => setView({ name: "program", program: view.program })}
         />
       ) : view.name === "quiz" ? (
         <Quiz
-          module={MODULES.find((m) => m.id === view.id)}
+          module={activeProgram.modules.find((m) => m.id === view.id)}
           onRefresh={refresh}
-          onBack={() => setView({ name: "module", id: view.id })}
-          onDashboard={() => setView({ name: "dashboard" })}
+          onBack={() => setView({ ...view, name: "module" })}
+          onDashboard={() => setView({ name: "program", program: view.program })}
         />
       ) : view.name === "session" ? (
         <SessionView
-          session={SESSIONS.find((s) => s.id === view.id)}
+          session={activeProgram.sessions.find((s) => s.id === view.id)}
           state={progress.sessions[view.id] || {}}
           onRefresh={refresh}
-          onBack={() => setView({ name: "dashboard" })}
+          onBack={() => setView({ name: "program", program: view.program })}
         />
       ) : view.name === "certificate" ? (
-        <Certificate profile={profile} progress={progress} onBack={() => setView({ name: "dashboard" })} />
-      ) : (
-        <Dashboard
+        <Certificate
+          profile={profile}
+          program={activeProgram}
+          progress={progress}
+          onBack={() => setView({ name: "program", program: view.program })}
+        />
+      ) : view.name === "program" && activeProgram ? (
+        <ProgramView
+          program={activeProgram}
           status={status}
           progress={progress}
-          nextItem={nextItem}
-          doneCount={doneCount}
-          onOpen={(item) =>
-            setView(item.kind === "module" ? { name: "module", id: item.id } : { name: "session", id: item.id })
-          }
-          onCertificate={() => setView({ name: "certificate" })}
+          onOpen={openItem}
+          onCertificate={() => setView({ ...view, name: "certificate" })}
+          onHome={() => setView({ name: "home" })}
+        />
+      ) : (
+        <Home
+          profile={profile}
+          programs={programs}
+          onOpen={(id) => setView({ name: "program", program: id })}
         />
       )}
 
-      <footer className="tm-footer">TMM AG · TMM College BIM-Zertifizierung</footer>
+      <footer className="tm-footer">TMM AG · TMM College</footer>
     </div>
   );
 }
 
-/* ---------- Anmeldung ---------- */
+/* ---------- Anmeldung (programmneutral) ---------- */
 function Login() {
   return (
     <main className="tm-main tm-login">
       <div className="tm-login-card">
         <p className="tm-eyebrow">Anmeldung</p>
-        <h1 className="tm-h1">Neun Module. Drei Live-Sessions. Ein Zertifikat.</h1>
+        <h1 className="tm-h1">Weiterbildung im eigenen Tempo.</h1>
         <p className="tm-lead">
-          Sie arbeiten in Ihrem eigenen Tempo. Der Lernstand wird nach jedem Schritt gespeichert —
-          Sie können jederzeit pausieren und auf jedem Gerät genau dort weitermachen.
+          Ihre zugewiesenen Schulungen und Zertifizierungen an einem Ort. Der Lernstand wird nach
+          jedem Schritt gespeichert — Sie können jederzeit pausieren und auf jedem Gerät genau dort
+          weitermachen.
         </p>
         <button className="tm-btn tm-btn-primary" onClick={signInWithEntra}>
           Mit TMM-Konto anmelden
         </button>
-        <p className="tm-note">Die Anmeldung läuft über Ihr Microsoft-365-Konto. Ein separates Passwort gibt es nicht.</p>
+        <p className="tm-note">
+          Die Anmeldung läuft über Ihr Microsoft-365-Konto. Ein separates Passwort gibt es nicht.
+        </p>
       </div>
     </main>
   );
 }
 
+/* ---------- Startseite: alle zugewiesenen Programme ---------- */
+function Home({ profile, programs, onOpen }) {
+  const open = programs.filter((p) => p.total === 0 || p.done < p.total);
+  const done = programs.filter((p) => p.total > 0 && p.done >= p.total);
+  const firstName = (profile.display_name || "").split(" ")[0];
+
+  return (
+    <main className="tm-main">
+      <section className="tm-hero">
+        <p className="tm-eyebrow">Ihre Weiterbildung</p>
+        <h1 className="tm-h1">Willkommen zurück{firstName ? ", " + firstName : ""}.</h1>
+        <p className="tm-lead">
+          {programs.length === 0
+            ? "Ihnen ist derzeit keine Schulung zugewiesen. Ihr Trainer schaltet sie frei, sobald es losgeht."
+            : open.length > 0
+            ? "Hier stehen Ihre offenen Aufgaben und was Sie bereits abgeschlossen haben."
+            : "Sie haben alle zugewiesenen Programme abgeschlossen."}
+        </p>
+      </section>
+
+      {open.length > 0 && (
+        <>
+          <h3 className="tm-h3">Offen</h3>
+          <div className="tm-programs">
+            {open.map((p) => (
+              <ProgramCard key={p.id} p={p} onOpen={onOpen} />
+            ))}
+          </div>
+        </>
+      )}
+
+      {done.length > 0 && (
+        <>
+          <h3 className="tm-h3">Abgeschlossen</h3>
+          <div className="tm-programs">
+            {done.map((p) => (
+              <ProgramCard key={p.id} p={p} onOpen={onOpen} />
+            ))}
+          </div>
+        </>
+      )}
+    </main>
+  );
+}
+
+function ProgramCard({ p, onOpen }) {
+  const empty = p.total === 0;
+  const complete = !empty && p.done >= p.total;
+  const pct = empty ? 0 : Math.round((p.done / p.total) * 100);
+  return (
+    <button
+      className={"tm-program" + (complete ? " is-complete" : "") + (empty ? " is-empty" : "")}
+      onClick={() => !empty && onOpen(p.id)}
+      disabled={empty}
+      style={{ borderTopColor: p.accent }}
+    >
+      <span className="tm-program-head">
+        <span className="tm-program-title">{p.title}</span>
+        <span className="tm-program-sub">{p.subtitle}</span>
+      </span>
+      {empty ? (
+        <span className="tm-program-state">Inhalte in Vorbereitung</span>
+      ) : (
+        <>
+          <span className="tm-program-bar">
+            <span style={{ width: pct + "%", background: p.accent }} />
+          </span>
+          <span className="tm-program-state">
+            {complete ? "Abgeschlossen" : p.done + " von " + p.total + " Etappen · " + pct + " %"}
+          </span>
+        </>
+      )}
+    </button>
+  );
+}
+
 /* ---------- Lernpfad-Schiene ---------- */
-function PathRail({ status, onOpen }) {
+function PathRail({ program, status, onOpen }) {
+  const items = pathOf(program);
   return (
     <div className="tm-rail-wrap">
       <div className="tm-rail" role="list">
-        {PATH.map((item, i) => {
+        {items.map((item, i) => {
           const st = status[item.id];
           const isSession = item.kind === "session";
           return (
@@ -199,18 +300,24 @@ function PathRail({ status, onOpen }) {
   );
 }
 
-/* ---------- Dashboard ---------- */
-function Dashboard({ status, progress, nextItem, doneCount, onOpen, onCertificate }) {
-  const pct = Math.round((doneCount / PATH.length) * 100);
-  const complete = doneCount === PATH.length;
+/* ---------- Programmansicht ---------- */
+function ProgramView({ program, status, progress, onOpen, onCertificate, onHome }) {
+  const items = pathOf(program);
+  const doneCount = items.filter((i) => status[i.id] === "done").length;
+  const nextItem = items.find((i) => status[i.id] === "active") || null;
+  const pct = items.length ? Math.round((doneCount / items.length) * 100) : 0;
+  const complete = items.length > 0 && doneCount === items.length;
+
   return (
     <main className="tm-main">
+      <button className="tm-back" onClick={onHome}>← Alle Schulungen</button>
+
       <section className="tm-panel tm-panel-path">
         <div className="tm-panel-head">
-          <p className="tm-eyebrow">Ihr Lernpfad</p>
-          <span className="tm-count">{doneCount} von {PATH.length} Etappen · {pct} %</span>
+          <p className="tm-eyebrow">{program.title}</p>
+          <span className="tm-count">{doneCount} von {items.length} Etappen · {pct} %</span>
         </div>
-        <PathRail status={status} onOpen={onOpen} />
+        <PathRail program={program} status={status} onOpen={onOpen} />
       </section>
 
       {complete ? (
@@ -244,7 +351,7 @@ function Dashboard({ status, progress, nextItem, doneCount, onOpen, onCertificat
       ) : null}
 
       <section className="tm-list">
-        {PATH.map((item) => {
+        {items.map((item) => {
           const st = status[item.id];
           if (item.kind === "session") {
             return (
@@ -325,23 +432,14 @@ function ModuleView({ module: m, state, busy, onRead, onQuiz, onBack }) {
 
         <div className="tm-step">
           <p className="tm-step-label">Schritt 1 — Unterlagen</p>
-          <SlideViewer
-            module={m}
-            alreadyRead={!!state.read}
-            onAllSeen={() => onRead(m.id, true)}
-          />
+          <SlideViewer module={m} alreadyRead={!!state.read} onAllSeen={() => onRead(m.id, true)} />
           {state.read ? (
             <div className="tm-done-box">
               Durchgearbeitet{state.readAt ? " am " + fmtDate(state.readAt) : ""}. Die Lernabfrage ist freigegeben.
             </div>
           ) : (
             <label className="tm-check">
-              <input
-                type="checkbox"
-                checked={false}
-                disabled={busy}
-                onChange={(e) => onRead(m.id, e.target.checked)}
-              />
+              <input type="checkbox" checked={false} disabled={busy} onChange={(e) => onRead(m.id, e.target.checked)} />
               <span>
                 Die Bestätigung setzt sich automatisch, sobald Sie alle Folien gesehen haben.
                 Hier können Sie sie auch von Hand setzen.
@@ -405,21 +503,26 @@ function SessionView({ session, state, onRefresh, onBack }) {
 }
 
 /* ---------- Zertifikat ---------- */
-function Certificate({ profile, progress, onBack }) {
-  const last = progress.sessions.ZERT && progress.sessions.ZERT.doneAt;
+function Certificate({ profile, program, progress, onBack }) {
+  const lastSession = program.sessions.length
+    ? progress.sessions[program.sessions[program.sessions.length - 1].id]
+    : null;
   return (
     <main className="tm-main">
       <button className="tm-back tm-no-print" onClick={onBack}>← Lernpfad</button>
       <section className="tm-cert">
         <p className="tm-cert-eyebrow">TMM COLLEGE</p>
         <h1 className="tm-cert-title">Zertifikat</h1>
-        <p className="tm-cert-sub">BIM-Zertifizierung</p>
+        <p className="tm-cert-sub">{program.title}</p>
         <p className="tm-cert-name">{profile.display_name}</p>
         <p className="tm-cert-text">
-          hat das Weiterbildungsprogramm TMM College BIM-Zertifizierung vollständig durchlaufen:
-          neun Module im Selbststudium, neun bestandene Lernabfragen und drei Live-Sessions.
+          hat das Weiterbildungsprogramm {program.title} vollständig durchlaufen:
+          {" " + program.modules.length} Module im Selbststudium, ebenso viele bestandene
+          Lernabfragen und {program.sessions.length} Live-Sessions.
         </p>
-        <p className="tm-cert-date">Böblingen, {fmtDate(last || new Date().toISOString())}</p>
+        <p className="tm-cert-date">
+          Böblingen, {fmtDate((lastSession && lastSession.doneAt) || new Date().toISOString())}
+        </p>
       </section>
       <div className="tm-row tm-no-print" style={{ justifyContent: "center", marginTop: 16 }}>
         <button className="tm-btn tm-btn-ghost" onClick={() => window.print()}>Als PDF speichern</button>

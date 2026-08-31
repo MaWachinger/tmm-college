@@ -26,6 +26,9 @@ async function rpc(name, args) {
 
 export const api = {
   myProgress: () => rpc("my_progress"),
+  myPrograms: () => rpc("my_programs"),
+  assignProgram: (userId, programId, value = true) =>
+    rpc("assign_program", { p_user: userId, p_program: programId, p_value: value }),
   confirmRead: (moduleId, value = true) => rpc("confirm_read", { p_module: moduleId, p_value: value }),
   getQuiz: (moduleId) => rpc("get_quiz", { p_module: moduleId }),
   submitQuiz: (moduleId, answers) => rpc("submit_quiz", { p_module: moduleId, p_answers: answers }),

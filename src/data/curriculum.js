@@ -1,5 +1,9 @@
-/* Curriculum — statisch, identisch zum MVP */
-export const MODULES = [
+/* Curriculum — Programme, Module, Live-Sessions.
+   Die Reihenfolge und die Freischaltlogik werden zusaetzlich serverseitig
+   geprueft (Tabelle curriculum_steps). Aenderungen hier muessen dort
+   nachgezogen werden. */
+
+const BIM_MODULES = [
   { id: "M01", nr: "01", title: "BIM-Methode", color: "#00A4E8", slides: 12,
     file: "Modul01_BIM-Methode_v3.pptx",
     lead: "Grundbegriffe, ISO 19650, Reifegrade und Rollen. Der Einstieg in die Methodik.",
@@ -38,26 +42,52 @@ export const MODULES = [
     topics: ["Was ist der BAP — und warum gibt es ihn?", "Kapitelstruktur nach Muster-BAP", "Namenskonvention — stabiler Dateiname", "Modellierungsrichtlinie — Anlage 2", "BAP im Projektverlauf — Fortschreibung & Freigabe", "AIA & BAP im Zusammenspiel", "QS-Prozess im BAP", "Alle 9 Module im Überblick"] },
 ];
 
-export const SESSIONS = [
+const BIM_SESSIONS = [
   { id: "GRL", after: "M04", title: "Live-Session Grundlagen", focus: "Vertiefung M01–M04", minutes: 60 },
   { id: "WKZ", after: "M07", title: "Live-Session Werkzeuge", focus: "Vertiefung M05–M07", minutes: 60 },
   { id: "ZERT", after: "M09", title: "Live-Session BIM-Nutzen", focus: "Vertiefung M08–M09 · Zertifikatsübergabe", minutes: 60 },
 ];
 
-export const PATH = (() => {
+export const PROGRAMS = [
+  {
+    id: "BIM",
+    title: "BIM-Zertifizierung",
+    subtitle: "Neun Module, drei Live-Sessions",
+    lead: "Von der Methodik über Anwendungsfälle und Werkzeuge bis zu AIA und BAP.",
+    accent: "#00A4E8",
+    modules: BIM_MODULES,
+    sessions: BIM_SESSIONS,
+  },
+  {
+    id: "LEAN",
+    title: "LEAN-Zertifizierung",
+    subtitle: "In Vorbereitung",
+    lead: "Lean Construction in der Projektabwicklung. Die Inhalte entstehen gerade.",
+    accent: "#028090",
+    modules: [],
+    sessions: [],
+  },
+];
+
+export const getProgram = (id) => PROGRAMS.find((p) => p.id === id) || null;
+
+/* Reihenfolge eines Programms: Module, dazwischen die Live-Sessions */
+export function pathOf(program) {
+  if (!program) return [];
   const items = [];
-  MODULES.forEach((m) => {
+  program.modules.forEach((m) => {
     items.push({ kind: "module", ...m });
-    const s = SESSIONS.find((x) => x.after === m.id);
+    const s = program.sessions.find((x) => x.after === m.id);
     if (s) items.push({ kind: "session", ...s });
   });
   return items;
-})();
+}
 
-export function buildStatus(progress) {
+/* Status je Etappe: done / active / locked */
+export function buildStatus(program, progress) {
   const map = {};
   let blocked = false;
-  PATH.forEach((item) => {
+  pathOf(program).forEach((item) => {
     const done =
       item.kind === "module"
         ? !!(progress.modules[item.id] && progress.modules[item.id].read && progress.modules[item.id].passed)

@@ -1,7 +1,9 @@
 # TMM College — BIM-Zertifizierung
 
-Lernplattform für das interne Weiterbildungsprogramm der TMM AG.
-Neun Module im Selbststudium, je acht Fragen zur Lernabfrage, drei Live-Sessions als Etappenziele.
+Lernplattform für die interne Weiterbildung der TMM AG.
+Mehrere Programme (BIM, LEAN, …), je aus Modulen im Selbststudium mit Lernabfrage und
+Live-Sessions als Etappenzielen. Teilnehmende sehen auf der Startseite ihre zugewiesenen
+Programme mit Fortschritt.
 
 **Stack:** React + Vite · Supabase (Postgres, Auth) · GitHub Pages
 **Anmeldung:** Microsoft 365 / Entra ID
@@ -14,6 +16,7 @@ Neun Module im Selbststudium, je acht Fragen zur Lernabfrage, drei Live-Sessions
 1. Projekt anlegen auf [supabase.com](https://supabase.com), **Region Frankfurt (eu-central-1)**.
 2. Im SQL Editor nacheinander ausführen:
    - `supabase/schema.sql` — Tabellen, RLS, Freischaltlogik, Bewertungsfunktionen
+   - `supabase/migration_02_programme.sql` — Programme, Reihenfolge, Zuweisungen
    - `seed_questions.sql` — die 72 Fragen
 
 > **Hinweis:** `seed_questions.sql` ist bewusst nicht Teil dieses Repos, weil es die
@@ -115,9 +118,18 @@ Die Reihenfolge steht nicht nur im Frontend, sondern wird bei jedem Aufruf serve
 (`is_unlocked`). Ein Modul öffnet erst, wenn alle vorherigen Module bestanden sind und die
 davorliegenden Live-Sessions bestätigt wurden. Wer die Oberfläche umgeht, kommt keinen Schritt weiter.
 
-### Curriculum ändern
+### Programme und Curriculum ändern
 
-Titel, Farben, Folienzahlen und Inhaltsverzeichnisse stehen in `src/data/curriculum.js`.
+Die Anzeige (Titel, Farben, Folienzahlen, Inhaltsverzeichnisse) steht in `src/data/curriculum.js`,
+die verbindliche Reihenfolge in der Tabelle `curriculum_steps`. **Beides muss zusammenpassen** —
+eine Etappe, die nur im Code steht, bleibt serverseitig gesperrt.
+
+Neues Programm anlegen:
+1. Zeile in `programs` einfügen
+2. Etappen in `curriculum_steps` eintragen (Kennungen programmweit eindeutig, z. B. `L01`)
+3. Passenden Eintrag in `PROGRAMS` in `src/data/curriculum.js` ergänzen
+4. Fragen in `quiz_questions`/`quiz_options`, Folien in den Bucket `module-slides`
+5. Teilnehmende in der Trainer-Ansicht zuweisen
 Fragen ändert man in der Datenbank (`quiz_questions` / `quiz_options`) oder über eine neue
 Fassung von `seed_questions.sql` — die liegt intern und gehört nicht in dieses Repo.
 
