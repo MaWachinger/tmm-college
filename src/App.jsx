@@ -503,27 +503,126 @@ function SessionView({ session, state, onRefresh, onBack }) {
 }
 
 /* ---------- Zertifikat ---------- */
+
+/* Unterschriften. Links der Trainer des Programms — der Name steht beim Programm
+   in src/data/curriculum.js. Rechts die Gegenzeichnung durch das Unternehmen: ob das
+   die Geschäftsführung oder HR ist, ist noch nicht entschieden. Zum Ändern genügt
+   diese eine Zeile, unterschrieben wird auf dem Ausdruck von Hand. */
+const CERT_COUNTERSIGN = { name: "", role: "Geschäftsführung TMM AG" };
+
+const CERT_PLACE = "Böblingen";
+
+/* Normative Bezüge. "In Anlehnung an" ist bewusst gewählt und darf nicht zu einer
+   Konformitäts- oder Zertifizierungsaussage verschärft werden — dafür bräuchte es
+   eine akkreditierte Stelle. Die Formulierung beschreibt die Gestaltung der Inhalte. */
+const CERT_NORMS = "DIN EN ISO 19650 und der Richtlinienreihe VDI 2552";
+
+/* Zertifikatsnummer aus Programm, Ausstellungsjahr und Konto-Kennung.
+   Dieselbe Person und dasselbe Programm ergeben immer dieselbe Nummer, auch beim
+   zweiten Ausdruck. Bewusst keine fortlaufende Nummer — dafür bräuchte es eine
+   Registertabelle in der Datenbank (CLAUDE.md, offener Punkt 2). */
+function certificateNumber(programId, userId, issuedAt) {
+  let h = 0x811c9dc5;
+  const seed = programId + ":" + userId;
+  for (let i = 0; i < seed.length; i++) {
+    h ^= seed.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  const code = (h % 2176782336).toString(36).toUpperCase().padStart(6, "0"); // 36^6, immer 6 Stellen
+  return "TMM-" + programId + "-" + new Date(issuedAt).getFullYear() + "-" + code;
+}
+
 function Certificate({ profile, program, progress, onBack }) {
   const lastSession = program.sessions.length
     ? progress.sessions[program.sessions[program.sessions.length - 1].id]
     : null;
+  const issuedAt = (lastSession && lastSession.doneAt) || new Date().toISOString();
+  const certNr = certificateNumber(program.id, profile.id, issuedAt);
+  const signers = [{ name: program.trainer || "", role: "Trainer" }, CERT_COUNTERSIGN];
+
   return (
     <main className="tm-main">
       <button className="tm-back tm-no-print" onClick={onBack}>← Lernpfad</button>
+
+      {/* Blatt 1 — das Zertifikat */}
       <section className="tm-cert">
-        <p className="tm-cert-eyebrow">TMM COLLEGE</p>
+        <header className="tm-cert-head">
+          <p className="tm-cert-eyebrow">TMM COLLEGE</p>
+          <p className="tm-cert-nr">
+            <span>Zertifikat-Nr.</span>
+            {certNr}
+          </p>
+        </header>
+
         <h1 className="tm-cert-title">Zertifikat</h1>
         <p className="tm-cert-sub">{program.title}</p>
+
+        <p className="tm-cert-intro">Hiermit wird bestätigt, dass</p>
         <p className="tm-cert-name">{profile.display_name}</p>
         <p className="tm-cert-text">
-          hat das Weiterbildungsprogramm {program.title} vollständig durchlaufen:
+          das Weiterbildungsprogramm {program.title} der TMM AG vollständig durchlaufen hat:
           {" " + program.modules.length} Module im Selbststudium, ebenso viele bestandene
           Lernabfragen und {program.sessions.length} Live-Sessions.
         </p>
-        <p className="tm-cert-date">
-          Böblingen, {fmtDate((lastSession && lastSession.doneAt) || new Date().toISOString())}
+        <p className="tm-cert-norms">
+          Die Lerninhalte sind in Anlehnung an {CERT_NORMS} gestaltet.
+          Die Lernschwerpunkte sind auf Blatt 2 aufgeführt.
+        </p>
+
+        <p className="tm-cert-date">{CERT_PLACE}, {fmtDate(issuedAt)}</p>
+
+        <div className="tm-cert-signs">
+          {signers.map((s) => (
+            <div className="tm-cert-sign" key={s.role}>
+              <span className="tm-cert-sign-line" />
+              <span className="tm-cert-sign-name">{s.name || "\u00A0"}</span>
+              <span className="tm-cert-sign-role">{s.role}</span>
+            </div>
+          ))}
+        </div>
+
+        <p className="tm-cert-foot">
+          TMM AG · Interne Weiterbildung · Ausgestellt über die Lernplattform TMM College.
+          Rückfragen zu dieser Zertifikat-Nr. an die Programmleitung.
         </p>
       </section>
+
+      {/* Blatt 2 — Lernschwerpunkte, gedacht als Beilage bei Referenzen */}
+      <section className="tm-cert tm-cert-annex">
+        <header className="tm-cert-annex-head">
+          <p className="tm-cert-eyebrow">Lernschwerpunkte</p>
+          <p className="tm-cert-annex-ref">
+            {profile.display_name}
+            <span>{certNr}</span>
+          </p>
+        </header>
+
+        <ol className="tm-cert-modules">
+          {program.modules.map((m) => (
+            <li key={m.id}>
+              <span className="tm-cert-mod-nr">{m.nr}</span>
+              <span className="tm-cert-mod-body">
+                <span className="tm-cert-mod-title">{m.title}</span>
+                <span className="tm-cert-mod-lead">{m.lead}</span>
+              </span>
+            </li>
+          ))}
+        </ol>
+
+        {program.sessions.length > 0 && (
+          <p className="tm-cert-annex-sessions">
+            Dazu {program.sessions.length} betreute Live-Sessions:{" "}
+            {program.sessions.map((s) => s.focus).join(" · ")}
+          </p>
+        )}
+
+        <p className="tm-cert-foot">
+          Die Lerninhalte sind in Anlehnung an {CERT_NORMS} gestaltet. Die Reihenfolge der Module ist
+          verbindlich; jedes Modul wurde mit einer Lernabfrage abgeschlossen, die vollständig richtig
+          beantwortet werden musste. Die Teilnahme an den Live-Sessions wurde vom Trainer bestätigt.
+        </p>
+      </section>
+
       <div className="tm-row tm-no-print" style={{ justifyContent: "center", marginTop: 16 }}>
         <button className="tm-btn tm-btn-ghost" onClick={() => window.print()}>Als PDF speichern</button>
       </div>

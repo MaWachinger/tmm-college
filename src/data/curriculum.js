@@ -55,6 +55,7 @@ export const PROGRAMS = [
     subtitle: "Neun Module, drei Live-Sessions",
     lead: "Von der Methodik über Anwendungsfälle und Werkzeuge bis zu AIA und BAP.",
     accent: "#00A4E8",
+    trainer: "Martin Wachinger", // unterschreibt das Zertifikat links
     modules: BIM_MODULES,
     sessions: BIM_SESSIONS,
   },
@@ -64,6 +65,7 @@ export const PROGRAMS = [
     subtitle: "In Vorbereitung",
     lead: "Lean Construction in der Projektabwicklung. Die Inhalte entstehen gerade.",
     accent: "#028090",
+    trainer: "",
     modules: [],
     sessions: [],
   },

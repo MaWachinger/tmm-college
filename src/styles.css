@@ -161,23 +161,66 @@
     .tm-table td{padding:9px 10px 9px 0;border-bottom:1px solid #EFF3F8;color:#2A3A52;}
 
     /* Zertifikat */
-    .tm-cert{background:#fff;border:1px solid var(--line);border-top:8px solid var(--navy);border-radius:4px;
-      padding:52px 40px;text-align:center;}
-    .tm-cert-eyebrow{font-size:13px;letter-spacing:.32em;color:var(--blue);font-weight:700;margin:0 0 26px;}
+    .tm-cert{position:relative;background:#fff;border:1px solid var(--line);border-top:8px solid var(--navy);
+      border-radius:4px;padding:44px 52px 36px;text-align:center;}
+    /* zurueckhaltende Innenlinie, rein dekorativ */
+    .tm-cert::after{content:"";position:absolute;inset:20px;border:1px solid #E7ECF4;border-radius:2px;
+      pointer-events:none;}
+    .tm-cert > *{position:relative;z-index:1;}
+    .tm-cert-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;
+      text-align:left;margin-bottom:28px;}
+    .tm-cert-eyebrow{font-size:13px;letter-spacing:.32em;color:var(--blue);font-weight:700;margin:0;}
+    .tm-cert-nr{margin:0;text-align:right;font-size:14px;letter-spacing:.14em;font-weight:700;color:var(--navy);
+      border-left:3px solid var(--yellow);padding-left:11px;white-space:nowrap;}
+    .tm-cert-nr span{display:block;font-size:10px;letter-spacing:.18em;text-transform:uppercase;
+      color:var(--muted);font-weight:400;margin-bottom:3px;}
     .tm-cert-title{font-size:42px;letter-spacing:.06em;margin:0;color:var(--navy);}
     .tm-cert-sub{font-size:14px;letter-spacing:.28em;text-transform:uppercase;color:var(--muted);margin:6px 0 34px;}
+    .tm-cert-intro{font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin:0 0 14px;}
     .tm-cert-name{font-size:30px;color:var(--ink);margin:0 0 22px;border-bottom:2px solid var(--yellow);
       display:inline-block;padding-bottom:8px;}
-    .tm-cert-text{font-size:16px;line-height:1.6;color:var(--muted);max-width:52ch;margin:0 auto 30px;}
+    .tm-cert-text{font-size:16px;line-height:1.6;color:var(--muted);max-width:52ch;margin:0 auto 14px;}
+    .tm-cert-norms{font-size:13px;line-height:1.55;color:var(--muted);max-width:52ch;margin:0 auto 30px;}
     .tm-cert-date{font-size:14px;letter-spacing:.1em;color:var(--muted);margin:0;}
+    /* Unterschriften: der Abstand ueber der Linie ist der Platz zum Unterschreiben */
+    .tm-cert-signs{display:flex;justify-content:center;gap:56px;flex-wrap:wrap;margin:64px 0 30px;}
+    .tm-cert-sign{display:flex;flex-direction:column;align-items:center;flex:0 1 240px;min-width:200px;}
+    .tm-cert-sign-line{width:100%;height:1px;background:var(--navy);margin-bottom:9px;}
+    .tm-cert-sign-name{font-size:15px;color:var(--ink);min-height:20px;}
+    .tm-cert-sign-role{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:2px;}
+    .tm-cert-foot{font-size:11px;line-height:1.5;letter-spacing:.06em;color:#93A2B8;margin:0;
+      border-top:1px solid var(--line);padding-top:14px;}
+
+    /* Zertifikat, Blatt 2: Lernschwerpunkte als Beilage */
+    .tm-cert-annex{text-align:left;margin-top:20px;padding:38px 52px 32px;}
+    .tm-cert-annex-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;
+      margin-bottom:22px;padding-bottom:14px;border-bottom:1px solid var(--line);}
+    .tm-cert-annex-ref{margin:0;text-align:right;font-size:13px;color:var(--ink);}
+    .tm-cert-annex-ref span{display:block;font-size:11px;letter-spacing:.12em;color:var(--muted);margin-top:3px;}
+    .tm-cert-modules{list-style:none;padding:0;margin:0 0 22px;}
+    .tm-cert-modules li{display:flex;gap:14px;align-items:baseline;padding:9px 0;
+      border-bottom:1px solid #F1F5F9;break-inside:avoid;}
+    .tm-cert-mod-nr{flex:none;width:24px;font-size:13px;font-weight:700;color:var(--blue);letter-spacing:.04em;}
+    .tm-cert-mod-body{display:flex;flex-direction:column;gap:2px;}
+    .tm-cert-mod-title{font-size:15px;color:var(--ink);line-height:1.3;}
+    .tm-cert-mod-lead{font-size:13px;line-height:1.45;color:var(--muted);}
+    .tm-cert-annex-sessions{font-size:13px;line-height:1.5;color:#2A3A52;margin:0 0 22px;
+      border-left:3px solid var(--cyan);padding-left:13px;}
 
     @media (max-width:700px){
       .tm-h1{font-size:26px;}
       .tm-topics{columns:1;}
       .tm-panel{padding:20px;}
       .tm-next{padding:22px;}
-      .tm-cert{padding:34px 20px;}
+      .tm-cert{padding:32px 20px 26px;}
+      .tm-cert::after{inset:10px;}
+      .tm-cert-head{flex-direction:column;gap:12px;}
+      .tm-cert-nr{text-align:left;}
       .tm-cert-title{font-size:32px;}
+      .tm-cert-signs{gap:38px;margin-top:48px;}
+      .tm-cert-annex{padding:28px 20px 24px;}
+      .tm-cert-annex-head{flex-direction:column;gap:8px;}
+      .tm-cert-annex-ref{text-align:left;}
     }
     @media (prefers-reduced-motion:reduce){
       .tm-root *{animation:none !important;transition:none !important;}
@@ -195,7 +238,11 @@
 @media print{
   .tm-header,.tm-footer,.tm-no-print,.tm-back{display:none !important;}
   .tm-root{background:#fff;}
-  .tm-cert{border:none;}
+  .tm-cert{border:none;padding:22px 10px;break-inside:avoid;}
+  .tm-cert::after{inset:0;}
+  .tm-cert-signs{break-inside:avoid;}
+  .tm-cert-annex{break-before:page;margin-top:0;padding:22px 10px;}
+  @page{size:A4 portrait;margin:14mm;}
 }
 
 /* --- Folienbetrachter --- */
