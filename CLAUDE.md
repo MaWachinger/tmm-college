@@ -55,13 +55,35 @@ Die Handbestätigung bleibt als Notausgang, falls Bilder fehlen.
 
 ## Folien neu rendern
 
-Wenn sich eine PPTX ändert:
+Wenn sich eine PPTX ändert. Zwei naheliegende Wege sind ausdrücklich **nicht** gemeint:
+
+- **PowerPoints JPEG-Export** liefert 96 dpi. Bei 25,4 cm Folienbreite sind das 960 px,
+  also weniger als die 1100 px, die ohnehin schon zu weich waren. Höher nur über einen
+  Registry-Eintrag.
+- **LibreOffice** zeichnet die Folien mit eigener Engine neu. Bei Fließtext unauffällig,
+  bei SmartArt, positionierten Beschriftungen und der TMM-Schrift nicht. Die Verschiebungen
+  fallen erst im Betrieb auf, dann aber in allen Modulen gleichzeitig.
+
+Der Weg, der die Folien so lässt, wie PowerPoint sie zeigt — PowerPoint macht das PDF,
+gerendert wird aus dem PDF:
+
+1. PPTX öffnen, *Datei → Exportieren → PDF/XPS erstellen*, Qualität **Standard**
+   (nicht „Minimale Größe"). Modulnummer im Dateinamen behalten. Alle PDFs in einen Ordner.
+2. Rendern:
 
 ```bash
-libreoffice --headless --convert-to pdf ModulXX.pptx
-pdftoppm -jpeg -r 190 -jpegopt quality=80 ModulXX.pdf s
-# Dateien zu 01.jpg, 02.jpg … umbenennen, in module-slides/MXX hochladen
+pip install pymupdf                                    # einmalig
+python tools/folien_rendern.py C:\Folien --breite 1900
 ```
+
+   Ergebnis liegt in `C:\Folien\render\M01\01.jpg` … — genau die Struktur des Buckets.
+
+3. Im Bucket `module-slides` **erst den alten Ordnerinhalt löschen**, dann hochladen. Der
+   Betrachter listet alles, was in `MXX/` liegt, sortiert nach Namen — liegengebliebene
+   Dateien erscheinen als zusätzliche Folien mitten im Modul.
+
+Ändert sich dabei die Folienzahl, muss `slides:` beim Modul in `src/data/curriculum.js`
+nachgezogen werden. Die Zahl ist reine Anzeige, gezählt wird im Betrachter selbst.
 
 ## Rollen
 
@@ -73,7 +95,12 @@ pdftoppm -jpeg -r 190 -jpegopt quality=80 ModulXX.pdf s
 ## Offene Punkte
 
 1. **HD-Folien hochladen** — 1900px-Fassung ersetzt die erste 1100px-Fassung im Bucket
-2. **Zertifikat gestalten** — aktuell ein Entwurf ohne Unterschriften und Zertifikatsnummer
+2. **Zertifikat** — Nummer, zwei Unterschriftsfelder und Blatt 2 mit den Lernschwerpunkten
+   stehen. Offen: wer gegenzeichnet, Geschäftsführung oder HR — das ist die eine Zeile
+   `CERT_COUNTERSIGN` in `src/App.jsx`. Und die Nummer wird im Browser aus Programm und
+   Konto-Kennung abgeleitet: stabil und eindeutig, aber aus keinem Register. Prüfbar wäre
+   sie erst mit einer Tabelle `certificates` und einer `security definer`-Funktion, die
+   beim Abschluss eine laufende Nummer zieht.
 3. **Adresse entpersonalisieren** — eigene Domain oder GitHub-Organisation; letztere hätte
    den Vorteil, dass das Repo TMM gehört statt einem privaten Konto
 4. **Betriebsrat** — die Trainer-Auswertung protokolliert jeden Fehlversuch mit Zeitstempel.
