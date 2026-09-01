@@ -17,6 +17,7 @@ Programme mit Fortschritt.
 2. Im SQL Editor nacheinander ausführen:
    - `supabase/schema.sql` — Tabellen, RLS, Freischaltlogik, Bewertungsfunktionen
    - `supabase/migration_02_programme.sql` — Programme, Reihenfolge, Zuweisungen
+   - `supabase/migration_03_standardprogramm.sql` — BIM wird neuen Konten automatisch zugewiesen
    - `seed_questions.sql` — die 72 Fragen
 
 > **Hinweis:** `seed_questions.sql` ist bewusst nicht Teil dieses Repos, weil es die
