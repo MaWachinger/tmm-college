@@ -33,6 +33,10 @@ export const api = {
   getQuiz: (moduleId) => rpc("get_quiz", { p_module: moduleId }),
   submitQuiz: (moduleId, answers) => rpc("submit_quiz", { p_module: moduleId, p_answers: answers }),
   trainerOverview: () => rpc("trainer_overview"),
+  invitePerson: (email, programId) => rpc("invite_person", { p_email: email, p_program: programId }),
+  revokeInvitation: (email, programId) =>
+    rpc("revoke_invitation", { p_email: email, p_program: programId }),
+  openInvitations: () => rpc("open_invitations"),
   confirmSession: (userId, sessionId, value = true) =>
     rpc("confirm_session", { p_user: userId, p_session: sessionId, p_value: value }),
 };

@@ -4,6 +4,7 @@ import { PROGRAMS, getProgram, pathOf, buildStatus, fmtDate, fmtDateTime } from 
 
 export default function Trainer({ onClose }) {
   const [rows, setRows] = useState(null);
+  const [invites, setInvites] = useState(null);
   const [error, setError] = useState("");
   const [open, setOpen] = useState(null);
   const [filter, setFilter] = useState("ALL");
@@ -11,7 +12,12 @@ export default function Trainer({ onClose }) {
   const load = useCallback(async () => {
     setError("");
     try {
-      setRows(await api.trainerOverview());
+      const [uebersicht, offen] = await Promise.all([
+        api.trainerOverview(),
+        api.openInvitations(),
+      ]);
+      setRows(uebersicht);
+      setInvites(offen || []);
     } catch (e) {
       setError(e.message);
     }
@@ -74,6 +80,9 @@ export default function Trainer({ onClose }) {
   return (
     <main className="tm-main">
       <button className="tm-back" onClick={onClose}>← Zurück</button>
+
+      <Einladen invites={invites} onDone={load} />
+
       <section className="tm-panel">
         <div className="tm-panel-head">
           <div>
@@ -299,5 +308,172 @@ function Detail({ row, onAssign, onToggleSession }) {
         );
       })}
     </div>
+  );
+}
+
+/* ---------- Einladen ----------
+   Konten legt Entra an, nicht die Plattform. Eine Einladung ist deshalb ein
+   Vermerk auf einer E-Mail-Adresse: meldet sich die Person zum ersten Mal an,
+   macht der Trigger daraus eine Zuweisung. Die Mail schreibt der Trainer
+   vorerst selbst -- der Knopf legt ihm den Text in die Zwischenablage. */
+function Einladen({ invites, onDone }) {
+  const [email, setEmail] = useState("");
+  const [programId, setProgramId] = useState(PROGRAMS[0] ? PROGRAMS[0].id : "");
+  const [busy, setBusy] = useState(false);
+  const [hinweis, setHinweis] = useState("");
+  const [kopiert, setKopiert] = useState("");
+  // eigener Fehlerzustand: eine Meldung weiter unten im anderen Panel wird uebersehen
+  const [fehler, setFehler] = useState("");
+
+  const adresse = window.location.origin + import.meta.env.BASE_URL;
+
+  const mailtext = (pid) => {
+    const p = getProgram(pid);
+    const titel = p ? p.title : pid;
+    return (
+      "Betreff: TMM College — " + titel + "\n\n" +
+      "Hallo,\n\n" +
+      "für Sie ist im TMM College das Programm „" + titel + "“ freigeschaltet.\n\n" +
+      "Sie melden sich mit Ihrem TMM-Konto an, ein eigenes Passwort brauchen Sie nicht:\n" +
+      adresse + "\n\n" +
+      "Nach der Anmeldung sehen Sie Ihren Lernpfad. Die Module bearbeiten Sie im " +
+      "Selbststudium, die Termine der Live-Sessions stimmen wir gesondert ab.\n\n" +
+      "Bei Fragen melden Sie sich gern.\n\nViele Grüße"
+    );
+  };
+
+  const kopieren = async (pid) => {
+    try {
+      await navigator.clipboard.writeText(mailtext(pid));
+      setKopiert(pid);
+      setTimeout(() => setKopiert(""), 2500);
+    } catch (e) {
+      setFehler("Kopieren nicht möglich: " + e.message);
+    }
+  };
+
+  const einladen = async (e) => {
+    e.preventDefault();
+    if (!email.trim()) return;
+    setBusy(true);
+    setHinweis("");
+    setFehler("");
+    try {
+      const r = await api.invitePerson(email, programId);
+      setHinweis(
+        r && r.status === "zugewiesen"
+          ? r.email + " ist bereits angemeldet — das Programm wurde direkt zugewiesen."
+          : "Einladung für " + (r ? r.email : email) + " vermerkt. Jetzt die Mail verschicken."
+      );
+      setEmail("");
+      await onDone();
+    } catch (err) {
+      setFehler(err.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const zuruecknehmen = async (inv) => {
+    setFehler("");
+    try {
+      await api.revokeInvitation(inv.email, inv.program_id);
+      await onDone();
+    } catch (err) {
+      setFehler(err.message);
+    }
+  };
+
+  return (
+    <section className="tm-panel">
+      <p className="tm-eyebrow">Zugang</p>
+      <h2 className="tm-h2">Person einladen</h2>
+      <p className="tm-lead">
+        Die Einladung merkt sich die Adresse. Sobald sich die Person zum ersten Mal mit ihrem
+        TMM-Konto anmeldet, ist das Programm da — sie landet nicht mehr auf einer leeren Startseite.
+        Den Zugang zur App selbst vergibt weiterhin Entra.
+      </p>
+
+      <form className="tm-row" onSubmit={einladen}>
+        <input
+          className="tm-input"
+          type="email"
+          placeholder="vorname.nachname@tmm-ag.de"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          disabled={busy}
+        />
+        <select
+          className="tm-input"
+          style={{ flex: "0 0 auto", minWidth: 200 }}
+          value={programId}
+          onChange={(e) => setProgramId(e.target.value)}
+          disabled={busy}
+        >
+          {PROGRAMS.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.title}
+              {p.modules.length === 0 ? " (noch ohne Inhalte)" : ""}
+            </option>
+          ))}
+        </select>
+        <button className="tm-btn tm-btn-primary" type="submit" disabled={busy || !email.trim()}>
+          {busy ? "…" : "Einladen"}
+        </button>
+        <button
+          className="tm-btn tm-btn-ghost"
+          type="button"
+          onClick={() => kopieren(programId)}
+        >
+          {kopiert === programId ? "Text kopiert" : "Einladungstext kopieren"}
+        </button>
+      </form>
+      {fehler && <p className="tm-error">{fehler}</p>}
+      {hinweis && <p className="tm-note">{hinweis}</p>}
+
+      <h3 className="tm-h3">Offene Einladungen</h3>
+      {!invites ? (
+        <div className="tm-empty">wird geladen …</div>
+      ) : invites.length === 0 ? (
+        <div className="tm-empty">
+          Keine offenen Einladungen. Angenommene Einladungen stehen unten als Zuweisung.
+        </div>
+      ) : (
+        <table className="tm-table">
+          <thead>
+            <tr>
+              <th>E-Mail</th>
+              <th>Programm</th>
+              <th>Eingeladen</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {invites.map((inv) => {
+              const p = getProgram(inv.program_id);
+              return (
+                <tr key={inv.email + inv.program_id}>
+                  <td>{inv.email}</td>
+                  <td>
+                    <span className="tm-pill" style={{ background: p ? p.accent : "#8898AE" }}>
+                      {p ? p.title : inv.program_id}
+                    </span>
+                  </td>
+                  <td className="tm-muted">
+                    {fmtDate(inv.invited_at)}
+                    {inv.invited_by ? " · " + inv.invited_by : ""}
+                  </td>
+                  <td>
+                    <button className="tm-link tm-link-dark" onClick={() => zuruecknehmen(inv)}>
+                      zurücknehmen
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      )}
+    </section>
   );
 }
