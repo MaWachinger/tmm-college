@@ -322,6 +322,8 @@ function Einladen({ invites, onDone }) {
   const [busy, setBusy] = useState(false);
   const [hinweis, setHinweis] = useState("");
   const [kopiert, setKopiert] = useState("");
+  // Faellt die Zwischenablage aus, wird der Text zum Herauskopieren angezeigt
+  const [textOffen, setTextOffen] = useState(false);
   // eigener Fehlerzustand: eine Meldung weiter unten im anderen Panel wird uebersehen
   const [fehler, setFehler] = useState("");
 
@@ -346,9 +348,12 @@ function Einladen({ invites, onDone }) {
     try {
       await navigator.clipboard.writeText(mailtext(pid));
       setKopiert(pid);
+      setTextOffen(false);
       setTimeout(() => setKopiert(""), 2500);
     } catch (e) {
-      setFehler("Kopieren nicht möglich: " + e.message);
+      // Manche Browser und Gruppenrichtlinien sperren die Zwischenablage.
+      // Dann den Text anzeigen, statt den Trainer mit einer Fehlermeldung stehenzulassen.
+      setTextOffen(true);
     }
   };
 
@@ -428,6 +433,20 @@ function Einladen({ invites, onDone }) {
           {kopiert === programId ? "Text kopiert" : "Einladungstext kopieren"}
         </button>
       </form>
+      {textOffen && (
+        <>
+          <p className="tm-note">
+            Die Zwischenablage ist in diesem Browser gesperrt. Text hier markieren und kopieren:
+          </p>
+          <textarea
+            className="tm-input tm-input-wide"
+            rows={13}
+            readOnly
+            value={mailtext(programId)}
+            onFocus={(e) => e.target.select()}
+          />
+        </>
+      )}
       {fehler && <p className="tm-error">{fehler}</p>}
       {hinweis && <p className="tm-note">{hinweis}</p>}
 

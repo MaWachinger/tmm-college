@@ -107,6 +107,22 @@ Dateien erscheinen als zusätzliche Folien mitten im Modul.
 Ändert sich dabei die Folienzahl, muss `slides:` beim Modul in `src/data/curriculum.js`
 nachgezogen werden. Die Zahl ist reine Anzeige, gezählt wird im Betrachter selbst.
 
+## Lokal bauen
+
+Node 24 LTS ist auf dem Arbeitsrechner installiert (`winget install OpenJS.NodeJS.LTS`),
+liegt aber nicht in der PATH der Git-Bash — dort `export PATH="/c/Program Files/nodejs:$PATH"`.
+
+**`npm install` nicht im Projektordner ausführen.** Der liegt unter OneDrive; `node_modules`
+sind zehntausende Dateien, die sonst alle nach SharePoint synchronisiert würden — und genau
+daher kommen die Dateisperren, vor denen die Fallstricke oben warnen. Stattdessen den Ordner
+ohne `.git` in ein lokales Verzeichnis kopieren und dort `npm ci` und `npm run build` laufen
+lassen. Dauerhafte Lösung wäre der Umzug des Repos nach `C:\Repos\`.
+
+Zum Ansehen ohne Anmeldung und ohne Datenbank: in der Kopie `src/lib/supabase.js` durch eine
+Attrappe ersetzen, die `api`, `supabase`, `loadProfile` und `signInWithEntra` mit Testdaten
+zurückgibt, dann `npm run dev`. So lassen sich Trainer-Ansicht und Zertifikat prüfen, ohne
+ein echtes Konto zu brauchen.
+
 ## Rollen
 
 - **Lernende:** sehen nur eigene Daten, brauchen eine Programmzuweisung
